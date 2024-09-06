@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Possessions = () => {
   const [possessions, setPossessions] = useState([]);
-  const [form, setForm] = useState({ libelle: '', valeur: '', dateDebut: '',dateFin: '', tauxAmortissement: '', jour: '', valeurConstante: '' });
+  const [form, setForm] = useState({ libelle: '', valeur: '', dateDebut: '',dateFin: null, tauxAmortissement: '', jour: '', valeurConstante: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -77,6 +77,13 @@ const Possessions = () => {
       setPossessions(updatedPossessions);
     });
   };
+  const handleSetCurrentDate = () => {
+    const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+    setForm({
+      ...form,
+      dateFin: today
+    });
+  };
 
   return (
     <div className="container mt-4">
@@ -103,7 +110,9 @@ const Possessions = () => {
               <td>{possession.libelle}</td>
               <td>{possession.valeur}</td>
               <td>{new Date(possession.dateDebut).toLocaleDateString()}</td>
-              <td>{possession.dateFin ? new Date(possession.dateFin).toLocaleDateString() : 'N/A'}</td>
+              <td>
+              {possession.dateFin ? new Date(possession.dateFin).toLocaleDateString() : 'Non définie'}
+              </td>
               <td>{possession.tauxAmortissement ?? 'N/A'}</td>
               <td>{possession.jour ?? 'N/A'}</td>
               <td>{possession.valeurConstante ?? 'N/A'}</td>
@@ -160,6 +169,23 @@ const Possessions = () => {
                 required
               />
             </Form.Group>
+            <Form.Group className="mb-3">
+        <Form.Label>Date de fin</Form.Label>
+        <Form.Control
+          type="text"
+          name="dateFin"
+          placeholder="YYYY-MM-DD (optionnelle)"
+          value={form.dateFin}
+          onChange={handleChange}
+        />
+          <Button
+          variant="secondary"
+          onClick={handleSetCurrentDate}
+          style={{ marginTop: '10px' }}
+        >
+          Insérer la date actuelle
+        </Button>
+      </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Taux d'amortissement</Form.Label>
               <Form.Control

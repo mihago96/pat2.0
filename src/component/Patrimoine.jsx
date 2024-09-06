@@ -15,7 +15,7 @@ const PatrimoineChart = () => {
 
   useEffect(() => {
     // Fetch possessions data
-    fetch('http://localhost:5000/api/possessions')
+    fetch('https://back-pat2-0.onrender.com/api/possessions')
       .then(response => response.json())
       .then(data => setPossessions(data))
       .catch(error => console.error('Error fetching possessions:', error));

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Form, Button } from 'react-bootstrap';
 
 const PossessionForm = ({ initialForm = {}, onSubmit }) => {
+  const today = new Date().toISOString().split('T')[0]; // Date d'aujourd'hui en format YYYY-MM-DD
+
   const [form, setForm] = useState({
     libelle: '',
     valeur: '',
     dateDebut: '',
-    dateFin: '',
+    dateFin: '', // Date de fin par défaut à aujourd'hui
     tauxAmortissement: '',
     jour: '',
     valeurConstante: '',
@@ -14,6 +16,7 @@ const PossessionForm = ({ initialForm = {}, onSubmit }) => {
   });
 
   useEffect(() => {
+    // Met à jour le formulaire avec les données initiales, si elles sont fournies
     setForm({ ...form, ...initialForm });
   }, [initialForm]);
 
@@ -26,15 +29,31 @@ const PossessionForm = ({ initialForm = {}, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(form);
+    // Préparer le formulaire pour soumission
+    const updatedForm = { ...form };
+
+    // Si la date de fin est la date par défaut, on peut la mettre à null ou une autre valeur
+    if (updatedForm.dateFin === today) {
+      updatedForm.dateFin = null; // ou une autre valeur comme une chaîne vide si cela convient mieux à votre backend
+    }
+
+    onSubmit(updatedForm);
     setForm({
       libelle: '',
       valeur: '',
       dateDebut: '',
-      dateFin: '', 
+      dateFin: '', // Réinitialiser à la date d'aujourd'hui
       tauxAmortissement: '',
       jour: '',
       valeurConstante: ''
+    });
+  };
+
+  const handleSetCurrentDate = () => {
+    const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+    setForm({
+      ...form,
+      dateFin: today
     });
   };
 
@@ -72,15 +91,25 @@ const PossessionForm = ({ initialForm = {}, onSubmit }) => {
           required
         />
       </Form.Group>
+
       <Form.Group className="mb-3">
-        <Form.Label>Date de fin</Form.Label> {/* Ajout du champ dateFin */}
+        <Form.Label>Date de fin</Form.Label>
         <Form.Control
-          type="date"
+          type="text"
           name="dateFin"
-          value={form.dateFin.split('T')[0]}  // Format pour l'input date
+          placeholder="YYYY-MM-DD (optionnelle)"
+          value={form.dateFin}
           onChange={handleChange}
         />
+         <Button
+          variant="secondary"
+          onClick={handleSetCurrentDate}
+          style={{ marginTop: '10px' }}
+        >
+          Insérer la date actuelle
+        </Button>
       </Form.Group>
+      
       <Form.Group className="mb-3">
         <Form.Label>Taux d'amortissement</Form.Label>
         <Form.Control

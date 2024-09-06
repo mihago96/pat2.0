@@ -46,7 +46,9 @@ const PossessionsTable = ({ onEdit }) => {
               <td>{possession.libelle}</td>
               <td>{possession.valeur}</td>
               <td>{new Date(possession.dateDebut).toLocaleDateString()}</td>
-              <td>{possession.dateFin ? new Date(possession.dateFin).toLocaleDateString() : 'N/A'}</td>
+              <td>
+                {possession.dateFin ? new Date(possession.dateFin).toLocaleDateString() : 'Non définie'}
+              </td>
               <td>{possession.tauxAmortissement ?? 'N/A'}</td>
               <td>{possession.jour ?? 'N/A'}</td>
               <td>{possession.valeurConstante ?? 'N/A'}</td>

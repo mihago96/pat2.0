@@ -1,64 +1,129 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import { Line } from 'react-chartjs-2';
+import { Form, Button, Container } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-function PatrimoineValue() {
-  const [data, setData] = useState(null);
-  const [date, setDate] = useState(new Date());
-  const [valeurPat, setValeurPat] = useState(null);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-  // Appel à l'API pour récupérer les données
+const PatrimoineValue = () => {
+  const [possessions, setPossessions] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [chartData, setChartData] = useState({});
+  const [patrimoineTotal, setPatrimoineTotal] = useState(null);
+
   useEffect(() => {
-    fetch('http://localhost:5000/api/patrimoine')
+    // Fetch possessions data
+    fetch('https://back-pat2-0.onrender.com/api/possessions')
       .then(response => response.json())
-      .then(data => setData(data))
-      .catch(error => console.error('Erreur:', error));
+      .then(data => setPossessions(data))
+      .catch(error => console.error('Error fetching possessions:', error));
   }, []);
 
-  const calculateValeurPat = () => {
-    if (!data) return;
+  const calculatePatrimoine = (start, end) => {
+    if (!start || !end) return;
 
-    const possessions = data[1].data.possessions;  // Assure-toi que c'est l'index correct
-    const time = date.getTime();
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const dates = [];
+    const values = [];
+    
+    let currentDate = startDate;
+    
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      dates.push(dateStr);
 
-    const valeur = possessions.reduce((acc, possession) => {
-      const dateDebut = new Date(possession.dateDebut).getTime();
-      const dateFin = possession.dateFin ? new Date(possession.dateFin).getTime() : null;
+      const currentTime = currentDate.getTime();
+      const value = possessions.reduce((acc, possession) => {
+        const dateDebut = new Date(possession.dateDebut).getTime();
+        const dateFin = possession.dateFin ? new Date(possession.dateFin).getTime() : null;
 
-      if (time < dateDebut || (dateFin && time > dateFin)) {
-        return acc;
-      }
+        // Vérifie si la date actuelle est dans la période de la possession
+        if (currentTime < dateDebut || (dateFin && currentTime > dateFin)) {
+          return acc;
+        }
 
-      let valeurActuelle = possession.valeur;
+        let valeurActuelle = possession.valeur;
 
-      if (possession.tauxAmortissement) {
-        const anneeAmort = (time - dateDebut) / (1000 * 60 * 60 * 24 * 365);
-        const tauxAmort = valeurActuelle * (possession.tauxAmortissement / 100) * anneeAmort;
-        valeurActuelle = Math.max(0, valeurActuelle - tauxAmort);
-      }
+        // Calcule l'amortissement
+        if (possession.tauxAmortissement) {
+          const anneeAmort = (currentTime - dateDebut) / (1000 * 60 * 60 * 24 * 365);
+          const tauxAmort = valeurActuelle * (possession.tauxAmortissement / 100) * anneeAmort;
+          valeurActuelle = Math.max(0, valeurActuelle - tauxAmort);
+        }
 
-      if (possession.valeurConstante) {
-        valeurActuelle += possession.valeurConstante;
-      }
+        // Ajoute la valeur constante
+        if (possession.valeurConstante) {
+          valeurActuelle += possession.valeurConstante;
+        }
 
-      return acc + valeurActuelle;
-    }, 0);
+        return acc + valeurActuelle;
+      }, 0);
 
-    setValeurPat(valeur);
+      values.push(value);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    setChartData({
+      labels: dates,
+      datasets: [
+        {
+          label: 'Valeur du Patrimoine',
+          data: values,
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderWidth: 1
+        }
+      ]
+    });
+
+    setPatrimoineTotal(values[values.length - 1]);
   };
 
-  if (!data) return <div>Chargement...</div>;
-
   return (
-    <div className="App">
-      <h2>Patrimoine de {data[1].data.possesseur.nom} : {valeurPat !== null && <span>{valeurPat} Ar</span>}</h2>
-      <DatePicker selected={date} onChange={date => setDate(date)} />
-      <button onClick={calculateValeurPat}>Calculer Valeur</button>
-      {/* Tableau des possessions */}
-    </div>
+    <Container>
+      <h1 className="my-4">Évolution du Patrimoine</h1>
+      <Form>
+        <Form.Group className="mb-3">
+          <Form.Label>Date de début</Form.Label>
+          <DatePicker
+            selected={startDate}
+            onChange={(date) => setStartDate(date)}
+            dateFormat="yyyy-MM-dd"
+            className="form-control"
+          />
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Date de fin</Form.Label>
+          <DatePicker
+            selected={endDate}
+            onChange={(date) => setEndDate(date)}
+            dateFormat="yyyy-MM-dd"
+            className="form-control"
+          />
+        </Form.Group>
+        <Button
+          variant="primary"
+          onClick={() => calculatePatrimoine(startDate, endDate)}
+        >
+          Calculer
+        </Button>
+      </Form>
+
+      {chartData.labels && (
+        <>
+          <div className="my-4">
+            <Line data={chartData} />
+          </div>
+          <h3>Valeur Totale du Patrimoine : {patrimoineTotal !== null ? patrimoineTotal.toFixed(2) : 'N/A'}</h3>
+        </>
+      )}
+    </Container>
   );
-}
+};
 
 export default PatrimoineValue;
