@@ -183,7 +183,7 @@ const Possessions = () => {
           onClick={handleSetCurrentDate}
           style={{ marginTop: '10px' }}
         >
-          Insérer la date actuelle
+          Cloturer la possession
         </Button>
       </Form.Group>
             <Form.Group className="mb-3">
